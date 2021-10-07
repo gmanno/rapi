@@ -1,0 +1,54 @@
+version: '2.4'
+
+services:
+  postgres-db:
+    image: postgres
+    restart: always
+    volumes:
+      - /Users/germanocarvalho/Coding/databases/pg:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_PASSWORD: p0stgr3s
+      POSTGRES_USER: admin
+      POSTGRES_DB: rapi_test
+      PGDATA: /var/lib/postgresql/data/
+    ports:
+      - 5432:5432
+    networks:
+      - postgres-compose-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: germano.carv@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: p0stgr3s
+    volumes:
+      - /Users/germanocarvalho/Coding/databases/pgadmin/:/var/lib/pgadmin/
+    ports:
+      - 5050:80
+    depends_on:
+      - postgres-db
+    networks:
+      - postgres-compose-network
+
+  rapi:
+    image: rapi:latest
+    ports:
+      - "3000:3000"
+    restart: always
+    mem_limit: 1024m
+    volumes:
+      - .:/usr/src/app
+    command: bash -c "cd /usr/src/app && rake db:migrate RAILS_ENV=development && rm -f tmp/pids/server.pid && bundle exec rails s -b 0.0.0.0"
+    environment:
+      - RAILS_ENV=development 
+      - DATABASE_PASSWORD=${DB_PASSWORD} 
+      - DATABASE_USERNAME=${DB_USERNAME}
+      - DATABASE_HOST=${DB_HOST}
+    networks:
+      - postgres-compose-network
+
+networks:
+  postgres-compose-network:
+    driver: bridge
+
+
